@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Clones the repos that I am interested in.
 # -------------------------------------------------------
+
 if [[ $1 == 'k8s' ]]; then
     pushd ~
     if [[ ! -d glance-operator ]]; then
-       git clone git@github.com:fultonj/glance-operator.git
+       git clone https://github.com/fultonj/glance-operator.git
     fi
     if [[ ! -d cinder-operator ]]; then
-        git clone git@github.com:fultonj/cinder-operator.git
+        git clone https://github.com/fultonj/cinder-operator.git
     fi
     popd
     exit 0
@@ -41,9 +42,9 @@ if [[ $# -eq 0 ]]; then
     );
 fi
 # -------------------------------------------------------
-gerrit_user='fultonj'
-git config --global user.email "fulton@redhat.com"
-git config --global user.name "John Fulton"
+gerrit_user='averdagu'
+git config --global user.email "averdagu@redhat.com"
+git config --global user.name "Arnau Verdaguer"
 git config --global push.default simple
 git config --global gitreview.username $gerrit_user
 
