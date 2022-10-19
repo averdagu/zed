@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OTHER=1
-CEPH=1
+CEPH=0
 REPO=1
 LP1982744=1
 POD=1
