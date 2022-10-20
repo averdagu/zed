@@ -42,7 +42,7 @@ if [[ $# -eq 0 ]]; then
     );
 fi
 # -------------------------------------------------------
-gerrit_user='averdagu'
+gerrit_user='averdaguer'
 git config --global user.email "averdagu@redhat.com"
 git config --global user.name "Arnau Verdaguer"
 git config --global push.default simple
