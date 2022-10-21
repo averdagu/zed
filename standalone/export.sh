@@ -21,9 +21,9 @@ fi
 
 python3 missing_vars.py
 diff -u 99-standalone-vars 99-standalone-vars-new
-python3 add_ceph_vars_to_nova_conf.py
-diff -u 99-standalone-vars-new 99-standalone-vars-new-ceph
-cp -fv 99-standalone-vars-new-ceph $INV/99-custom
+#python3 add_ceph_vars_to_nova_conf.py
+#diff -u 99-standalone-vars-new 99-standalone-vars-new-ceph
+#cp -fv 99-standalone-vars-new-ceph $INV/99-custom
 
-python3 ceph_vars.py
-cp -fv 08-ceph $INV/
+#python3 ceph_vars.py
+#cp -fv 08-ceph $INV/
