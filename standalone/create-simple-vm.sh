@@ -15,7 +15,7 @@ openstack network create net1
 openstack subnet create --subnet-range 192.168.100.0/24 --network net1 subnet1
 
 ## Create public network
-openstack network create nova --public
+openstack network create nova --external
 openstack subnet create --subnet-range 10.0.0.0/24 --network nova subnova
 
 ## Setup router
