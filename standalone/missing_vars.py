@@ -26,6 +26,11 @@ vars['tripleo_nova_libvirt_need_libvirt_secret'] = False
 # add missing var to service_user
 vars['tripleo_nova_compute_config_overrides']['service_user']['username'] = 'nova'
 
+# Add randomize allocation vm
+vars['tripleo_nova_compute_config_overrides']['placement']['randomize_allocation_candidates'] = 'True'
+vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['host_subset_size'] = '2'
+vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['shuffle_best_same_weighed_hosts'] = 'True'
+
 # add missing vars to neutron
 missing_vars = {
     'auth_type': 'v3password',
