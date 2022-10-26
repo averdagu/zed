@@ -28,6 +28,7 @@ vars['tripleo_nova_compute_config_overrides']['service_user']['username'] = 'nov
 
 # Add randomize allocation vm
 vars['tripleo_nova_compute_config_overrides']['placement']['randomize_allocation_candidates'] = 'True'
+vars['tripleo_nova_compute_config_overrides']['filter_scheduler'] = {}
 vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['host_subset_size'] = '2'
 vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['shuffle_best_same_weighed_hosts'] = 'True'
 
