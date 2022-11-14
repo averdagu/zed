@@ -5,6 +5,7 @@ HOSTS=1
 CEPH=0
 REPO=1
 LP1982744=1
+LP1996482=1
 TMATE=0
 INSTALL=1
 FILES=1
@@ -72,6 +73,24 @@ if [[ $LP1982744 -eq 1 ]]; then
         echo "LP1982744 will block the deployment"
         exit 1
     fi
+fi
+
+if [[ $LP1996482 -eq 1 ]]; then
+    # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
+    if [ ! -d ~/ext/tripleo-ansible ]; then
+        echo "tripleo-ansible not found on ~/ext"
+        exit 1
+    fi
+    pushd ~/ext/tripleo-ansible
+    git config --global user.email "averdagu@redhat.com"
+    git config --global user.name "Arnau Verdaguer"
+    git fetch https://review.opendev.org/openstack/tripleo-ansible refs/changes/92/864392/5 && git cherry-pick FETCH_HEAD
+    if [[ ! $? -eq 0 ]]; then
+        echo "LP1996482 patch was not applied, deployment will fail"
+        exit 1
+    fi
+    popd
+
 fi
 
 if [[ $TMATE -eq 1 ]]; then
