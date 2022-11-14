@@ -74,6 +74,32 @@ if [[ $INSTALL -eq 1 ]]; then
     sudo yum install -y python3-tripleoclient
 fi
 
+if [[ $LP1996482 -eq 1 ]]; then
+    # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
+    mkdir -p ~/LP1996482
+    pushd ~/LP1996482
+    git clone https://github.com/openstack/tripleo-ansible.git
+    if [[ ! $? -eq 0 ]]; then
+        echo "LP1996482 patch was not applied, deployment will fail"
+        exit 1
+    fi
+    git config --global user.email "averdagu@redhat.com"
+    git config --global user.name "Arnau Verdaguer"
+    cd tripleo-ansible
+    git fetch https://review.opendev.org/openstack/tripleo-ansible refs/changes/92/864392/5 && git cherry-pick FETCH_HEAD
+    if [[ ! $? -eq 0 ]]; then
+        echo "LP1996482 patch was not applied, deployment will fail"
+        exit 1
+    fi
+    cd tripleo_ansible
+    # Apply changes
+    for src in `git diff-tree --no-commit-id --name-only -r HEAD | cut -d'/' -f2-`;
+    do
+       dst=`echo ${src} | sed 's/ansible_plugins/plugins/'`
+       sudo cp $src /usr/share/ansible/$dst
+    done
+fi
+
 if [[ $CONTAINERS -eq 1 ]]; then
     openstack tripleo container image prepare default \
       --output-env-file $HOME/containers-prepare-parameters.yaml
