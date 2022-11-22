@@ -6,6 +6,8 @@ CEPH=0
 REPO=1
 LP1982744=1
 LP1996482=1
+METADATA=1
+MANUAL_CONFIG=1
 TMATE=0
 INSTALL=1
 FILES=1
@@ -13,6 +15,8 @@ EXPORT=1
 
 CONTROLLER_IP=192.168.24.2
 COMPUTE_IP=192.168.24.100
+
+SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
 
 if [[ $NET -eq 1 ]]; then
     sudo ip addr add $COMPUTE_IP/24 dev eth0
@@ -75,6 +79,25 @@ if [[ $LP1982744 -eq 1 ]]; then
     fi
 fi
 
+if [[ $METADATA -eq 1 ]]; then
+    # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
+    PATCHSET=4
+    if [ ! -d ~/ext/tripleo-ansible ]; then
+        echo "tripleo-ansible not found on ~/ext"
+        exit 1
+    fi
+    pushd ~/ext/tripleo-ansible
+    git config --global user.email "averdagu@redhat.com"
+    git config --global user.name "Arnau Verdaguer"
+    git fetch https://review.opendev.org/openstack/tripleo-ansible refs/changes/14/864814/$PATCHSET && git cherry-pick FETCH_HEAD
+    if [[ ! $? -eq 0 ]]; then
+        echo "My patch was not applied, metadata will fail"
+        echo "Currently using patchet $PATCHSET"
+        exit 1
+    fi
+    popd
+fi
+
 if [[ $LP1996482 -eq 1 ]]; then
     # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
     if [ ! -d ~/ext/tripleo-ansible ]; then
@@ -90,7 +113,20 @@ if [[ $LP1996482 -eq 1 ]]; then
         exit 1
     fi
     popd
+fi
 
+if [[ $MANUAL_CONFIG -eq 1 ]]; then
+    # workaround while I don't create/pass the neutron and metadata configuration 
+    if [ ! -d ~/config/etc/neutron/plugins/networking-ovn ]; then
+        echo "Creating directory"
+        mkdir -p ~/config/etc/neutron/plugins/networking-ovn
+    fi
+    pushd ~/config/etc/neutron
+    ssh $SSH_OPT root@${CONTROLLER_IP} "podman exec -uroot -ti ovn_metadata_agent cat /etc/neutron/neutron.conf > /tmp/neutron.conf"
+    ssh $SSH_OPT root@${CONTROLLER_IP} "podman exec -uroot -ti ovn_metadata_agent cat /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini > /tmp/networking-ovn-metadata-agent.ini"
+    scp $SSH_OPT root@${CONTROLLER_IP}:/tmp/neutron.conf .
+    scp $SSH_OPT root@${CONTROLLER_IP}:/tmp/networking-ovn-metadata-agent.ini plugins/networking-ovn/networking-ovn-metadata-agent.ini
+    popd
 fi
 
 if [[ $TMATE -eq 1 ]]; then
