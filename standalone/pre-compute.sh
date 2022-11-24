@@ -1,6 +1,8 @@
 #!/bin/bash
 
 NET=1
+HOSTNAME=1
+DNS=1
 HOSTS=1
 CEPH=0
 REPO=1
@@ -14,11 +16,21 @@ FILES=1
 EXPORT=1
 
 CONTROLLER_IP=192.168.24.2
-COMPUTE_IP=192.168.24.100
+if [ $# -eq 1 ]; then
+  COMPUTE_IP=$1
+  echo "Using as compute_ip: $COMPUTE_IP"
+else
+  COMPUTE_IP=192.168.24.100
+fi
 
 SSH_OPT="-o StrictHostKeyChecking=no -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null"
+HOST=$(hostname -a)
 
 if [[ $NET -eq 1 ]]; then
+    # Try to modify hostname since a lot of containers will use it
+    # and since we can have multiple hostnames we need to change it
+    #HOSTNAME=`hostname`
+    #sudo echo "$HOSTNAME" > /etc/hostname
     sudo ip addr add $COMPUTE_IP/24 dev eth0
     ip a s eth0
     ping -c 1 $CONTROLLER_IP
@@ -27,6 +39,29 @@ if [[ $NET -eq 1 ]]; then
     if [[ ! $? -eq 0 ]]; then
         echo "Cannot ssh into $CONTROLLER_IP"
         exit 1
+    fi
+fi
+
+if [[ $HOSTNAME -eq 1 ]]; then
+    sudo setenforce 0
+    sudo hostnamectl set-hostname $HOST.localdomain
+    sudo hostnamectl set-hostname $HOST.localdomain --transient
+    sudo setenforce 1
+    IP=$(ip a s eth1 | grep inet | grep 192 | awk {'print $2'} | sed s/\\/24//)
+    sudo sed -i "/$IP/d" /etc/hosts
+    sudo sh -c "echo $IP $HOST.localdomain $HOST>> /etc/hosts"
+fi
+
+if [[ $DNS -eq 1 ]]; then
+    GW=192.168.122.1
+    sudo sysctl -w net.ipv4.ping_group_range="0 1000"
+    ping -c 1 $GW > /dev/null
+    if [[ $? -ne 0 ]]; then
+        echo "Cannot ping $GW. Aborting."
+        exit 1
+    fi
+    if [[ $(grep $GW /etc/resolv.conf | wc -l) -eq 0 ]]; then
+        sudo sh -c "echo nameserver $GW > /etc/resolv.conf"
     fi
 fi
 
@@ -116,15 +151,17 @@ if [[ $LP1996482 -eq 1 ]]; then
 fi
 
 if [[ $MANUAL_CONFIG -eq 1 ]]; then
-    # workaround while I don't create/pass the neutron and metadata configuration 
+    # workaround while I don't create/pass the neutron and metadata configuration
     if [ ! -d ~/config/etc/neutron/plugins/networking-ovn ]; then
         echo "Creating directory"
         mkdir -p ~/config/etc/neutron/plugins/networking-ovn
     fi
     pushd ~/config/etc/neutron
     ssh $SSH_OPT root@${CONTROLLER_IP} "podman exec -uroot -ti ovn_metadata_agent cat /etc/neutron/neutron.conf > /tmp/neutron.conf"
+    ssh $SSH_OPT root@${CONTROLLER_IP} "podman exec -uroot -ti ovn_metadata_agent cat /etc/neutron/rootwrap.conf > /tmp/rootwrap.conf"
     ssh $SSH_OPT root@${CONTROLLER_IP} "podman exec -uroot -ti ovn_metadata_agent cat /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini > /tmp/networking-ovn-metadata-agent.ini"
     scp $SSH_OPT root@${CONTROLLER_IP}:/tmp/neutron.conf .
+    scp $SSH_OPT root@${CONTROLLER_IP}:/tmp/rootwrap.conf .
     scp $SSH_OPT root@${CONTROLLER_IP}:/tmp/networking-ovn-metadata-agent.ini plugins/networking-ovn/networking-ovn-metadata-agent.ini
     popd
 fi
@@ -153,8 +190,10 @@ if [[ $FILES -eq 1 ]]; then
 fi
 
 if [[ $EXPORT -eq 1 ]]; then
-    pushd dirname `find . -name export.sh`
-        bash export.sh
+    DIR=$(dirname `find . -name export.sh`)
+    pushd $DIR
+    bash export.sh $COMPUTE_IP
     popd
 
 fi
+

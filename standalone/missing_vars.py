@@ -1,12 +1,19 @@
 #!/usr/bin/python3
 
 import yaml
+import sys
+import socket
+
+if len(sys.argv) != 1:
+    my_ip = sys.argv[1]
+else:
+    my_ip = "192.168.24.100"
 
 with open('99-standalone-vars', 'r') as standalone_vars_file:
     inv = yaml.safe_load(standalone_vars_file)
     vars = inv['Compute']['vars']
 
-my_ip = "192.168.24.100"
+
 controller_hostname = "standalone.localdomain"
 controller_ip = "192.168.24.2"
 vnc_url = vars['tripleo_nova_compute_vnc_novncproxy_base_url'] + '/vnc_auto.html'
@@ -22,6 +29,9 @@ vars['tripleo_nova_compute_vncproxy_host'] = vnc_url
 vars['tripleo_nova_compute_DEFAULT_reserved_host_memory_mb'] = '1024'
 vars['tripleo_nova_compute_reserved_host_memory'] = '1024'
 vars['tripleo_nova_libvirt_need_libvirt_secret'] = False
+
+# Configure hostname
+vars['tripleo_nova_compute_DEFAULT_host'] = socket.gethostname()
 
 # add missing var to service_user
 vars['tripleo_nova_compute_config_overrides']['service_user']['username'] = 'nova'

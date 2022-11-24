@@ -19,7 +19,13 @@ if [[ ! -e 99-standalone-vars ]]; then
     exit 1
 fi
 
-python3 missing_vars.py
+if [ $# -eq 1 ]; then
+  # $! will have an IP that will be used on missing_vars
+  # as "my_ip" to be able to use more than 1 compute
+  python3 missing_vars.py $1
+else
+  python3 missing_vars.py
+fi
 diff -u 99-standalone-vars 99-standalone-vars-new
 cp -fv 99-standalone-vars-new $INV/99-custom
 #python3 add_ceph_vars_to_nova_conf.py
