@@ -153,5 +153,8 @@ if [[ $FILES -eq 1 ]]; then
 fi
 
 if [[ $EXPORT -eq 1 ]]; then
-    bash export.sh
+    pushd dirname `find . -name export.sh`
+        bash export.sh
+    popd
+
 fi
