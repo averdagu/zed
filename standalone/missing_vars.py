@@ -32,6 +32,7 @@ vars['tripleo_nova_libvirt_need_libvirt_secret'] = False
 
 # Configure hostname
 vars['tripleo_nova_compute_DEFAULT_host'] = socket.gethostname()
+vars['tripleo_ovn_metadata_agent_DEFAULT_host'] = socket.gethostname()
 
 # add missing var to service_user
 vars['tripleo_nova_compute_config_overrides']['service_user']['username'] = 'nova'
@@ -43,7 +44,8 @@ vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['host_subset_s
 vars['tripleo_nova_compute_config_overrides']['filter_scheduler']['shuffle_best_same_weighed_hosts'] = 'True'
 
 # add missing vars to neutron
-missing_vars = {
+
+neutron_missing_vars = {
     'auth_type': 'v3password',
     'project_name': 'service',
     'user_domain_name': 'Default',
@@ -51,8 +53,48 @@ missing_vars = {
     'region_name': 'regionOne',
     'username': 'neutron',
 }
-for k,v in missing_vars.items():
-    vars['tripleo_nova_compute_config_overrides']['neutron'][k] = v
+
+for k,v in neutron_missing_vars.items():
+    vars['tripleo_nova_compute_config_overrides']["neutron"][k] = v
+
+# Add neutron config part
+vars['tripleo_ovn_metadata_agent_DEFAULT_dns_domain'] = 'localdomain'
+vars['tripleo_ovn_metadata_agent_DEFAULT_bind_host'] = controller_ip
+vars['tripleo_ovn_metadata_agent_neutron_config_overrides'] = {}
+
+other_missing_vars = {
+    'auth_type': 'password',
+    'project_name': 'service',
+    'user_domain_name': 'Default',
+    'project_domain_name': 'Default',
+    'region_name': 'regionOne',
+    'endpoint_type': 'internal',
+}
+
+for name in ["nova", "placement"]:
+    vars['tripleo_ovn_metadata_agent_neutron_config_overrides'][name] = {}
+    vars['tripleo_ovn_metadata_agent_neutron_config_overrides'][name]['username'] = name
+    for k,v in other_missing_vars.items():
+        vars['tripleo_ovn_metadata_agent_neutron_config_overrides'][name][k] = v
+
+keystone_authtoken_missing_vars = {
+    'interface': 'internal',
+    'region_name': 'regionOne',
+    'memcached_use_advanced_pool': 'True',
+    'memcached_servers': 'standalone.ctlplane.localdomain:11211',
+    'auth_type': 'password',
+    'username': 'neutron',
+    'user_domain_name': 'Default',
+    'project_name': 'service',
+    'project_domain_name': 'Default',
+}
+for k,v in keystone_authtoken_missing_vars.items():
+    vars['tripleo_ovn_metadata_agent_neutron_config_overrides']["keystone_authtoken"] = {}
+    vars['tripleo_ovn_metadata_agent_neutron_config_overrides']["keystone_authtoken"][k] = v
+
+vars['tripleo_ovn_metadata_agent_metadata_agent_config_overrides'] = {}
+vars['tripleo_ovn_metadata_agent_metadata_agent_config_overrides']["ovn"] = {}
+vars['tripleo_ovn_metadata_agent_metadata_agent_config_overrides']["ovn"]["ovn_sb_connection"] = "tcp:192.168.24.2:6642"
 
 config_dict = {
     'Compute': {

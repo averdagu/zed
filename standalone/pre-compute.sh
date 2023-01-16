@@ -116,7 +116,7 @@ fi
 
 if [[ $METADATA -eq 1 ]]; then
     # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
-    PATCHSET=4
+    PATCHSET=10
     if [ ! -d ~/ext/tripleo-ansible ]; then
         echo "tripleo-ansible not found on ~/ext"
         exit 1
