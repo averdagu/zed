@@ -9,7 +9,8 @@ REPO=1
 LP1982744=1
 LP1996482=1
 METADATA=1
-MANUAL_CONFIG=1
+ANSIBLE_GALAXY=1
+MANUAL_CONFIG=0
 TMATE=0
 INSTALL=1
 FILES=1
@@ -116,7 +117,7 @@ fi
 
 if [[ $METADATA -eq 1 ]]; then
     # workaround https://bugs.launchpad.net/tripleo/+bug/1996482
-    PATCHSET=10
+    PATCHSET=19
     if [ ! -d ~/ext/tripleo-ansible ]; then
         echo "tripleo-ansible not found on ~/ext"
         exit 1
@@ -130,6 +131,23 @@ if [[ $METADATA -eq 1 ]]; then
         echo "Currently using patchet $PATCHSET"
         exit 1
     fi
+    popd
+fi
+
+
+if [[ $ANSIBLE_GALAXY -eq 1 ]]; then
+    # Ansible can't be run since it misses config_template
+    mkdir -p /tmp/galaxy_ansible
+    pushd /tmp/galaxy_ansible
+    # Not the best way but it doesn't mess with vim highlight
+    echo "---" > /tmp/galaxy_ansible/req.yml
+    echo "collections:" >> /tmp/galaxy_ansible/req.yml
+    echo "- name: https://opendev.org/openstack/ansible-config_template" >> /tmp/galaxy_ansible/req.yml
+    echo "  version: master" >> /tmp/galaxy_ansible/req.yml
+    echo "  type: git" >> /tmp/galaxy_ansible/req.yml
+	ansible-galaxy install -r req.yml
+	sudo ansible-galaxy install -r req.yml
+    sed -i 's/config_template/openstack.config_template.config_template/' /home/stack/ext/tripleo-ansible/tripleo_ansible/roles/tripleo_nova_compute/tasks/configure.yml
     popd
 fi
 
